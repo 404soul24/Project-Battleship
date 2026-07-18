@@ -1,5 +1,12 @@
 let cellClickHandler = null;
 
+window.addEventListener('error', (e) => {
+  console.error('[FATAL] Uncaught error:', e.error?.stack || e.error || e.message);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[FATAL] Unhandled promise rejection:', e.reason?.stack || e.reason);
+});
+
 export function renderGameBoards(humanPlayer, computerPlayer, phase) {
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -59,8 +66,14 @@ function buildGrid(label, player, phase, isEnemy) {
       else clickableCount++;
 
       if (canClick) {
+        const _r = r, _c = c;
         cell.addEventListener('click', () => {
-          if (cellClickHandler) cellClickHandler(r, c);
+          try {
+            console.log(`[click] cell(${_r},${_c}) handler=${cellClickHandler?.name ?? 'null'}`);
+            if (cellClickHandler) cellClickHandler(_r, _c);
+          } catch (err) {
+            console.error(`[click ERROR] r=${_r} c=${_c}`, err?.stack || err);
+          }
         });
       }
 

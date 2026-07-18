@@ -38,6 +38,7 @@ function selectShip(size) {
 }
 
 function handlePlacementClick(row, col) {
+  try {
   console.log('[placement] click', { row, col, phase, selectedShipSize });
   if (phase !== 'placement' || !selectedShipSize) return;
 
@@ -61,9 +62,13 @@ function handlePlacementClick(row, col) {
     render();
     updateStatus('Select another ship below, then click a cell.');
   }
+  } catch (err) {
+    console.error('[placement ERROR]', err?.stack || err);
+  }
 }
 
 function handleBattleClick(row, col) {
+  try {
   console.log('[battle] click', { row, col, phase, isProcessing });
   if (phase !== 'battle' || isProcessing) {
     console.log('[battle] BLOCKED —', phase !== 'battle' ? 'phase=' + phase : 'isProcessing=' + isProcessing);
@@ -106,11 +111,16 @@ function handleBattleClick(row, col) {
       }
 
       updateStatus('Your turn — click enemy waters.');
+    } catch (err) {
+      console.error('[battle COMPUTER TURN ERROR]', err?.stack || err);
     } finally {
       console.log('[battle] computer turn done, isProcessing → false');
       isProcessing = false;
     }
   }, 800);
+  } catch (err) {
+    console.error('[battle PLAYER TURN ERROR]', err?.stack || err);
+  }
 }
 
 function toggleOrientation() {
