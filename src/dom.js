@@ -75,7 +75,7 @@ export function updateStatus(text) {
   if (el) el.textContent = text;
 }
 
-export function renderControls(phase, ships, currentShipIndex, orientation, onToggle, onRestart) {
+export function renderControls(phase, ships, orientation, onSelectShip, onToggle, onRestart, placedShips) {
   const app = document.getElementById('app');
   let controls = app.querySelector('.controls');
   if (!controls) {
@@ -86,21 +86,41 @@ export function renderControls(phase, ships, currentShipIndex, orientation, onTo
   controls.innerHTML = '';
 
   if (phase === 'placement') {
-    const indicator = document.createElement('span');
-    indicator.id = 'ship-indicator';
-    const remaining = ships.slice(currentShipIndex);
-    indicator.textContent = `Ships to place: ${remaining.map(s => '■'.repeat(s)).join(' ')}`;
-    controls.appendChild(indicator);
+    const label = document.createElement('span');
+    label.id = 'ship-indicator';
+    label.textContent = 'Pick a ship to place:';
+    controls.appendChild(label);
+
+    for (const size of ships) {
+      const alreadyPlaced = placedShips.filter(s => s.length === size).length >= (size === 3 ? 2 : 1);
+      const btn = document.createElement('button');
+      btn.textContent = `${'■'.repeat(size)} ${size}`;
+      btn.disabled = alreadyPlaced;
+      btn.addEventListener('click', () => onSelectShip(size));
+      controls.appendChild(btn);
+    }
 
     const toggleBtn = document.createElement('button');
     toggleBtn.textContent = orientation === 'horizontal' ? '⟷ Horizontal' : '↕ Vertical';
     toggleBtn.addEventListener('click', onToggle);
     controls.appendChild(toggleBtn);
+
+    const autoBtn = document.createElement('button');
+    autoBtn.textContent = 'Auto-place';
+    autoBtn.addEventListener('click', onRestart);
+    controls.appendChild(autoBtn);
   }
 
-  if (phase === 'gameover' || phase === 'placement') {
+  if (phase === 'battle') {
     const restartBtn = document.createElement('button');
-    restartBtn.textContent = phase === 'placement' ? 'Auto-place' : 'Restart';
+    restartBtn.textContent = 'Restart';
+    restartBtn.addEventListener('click', onRestart);
+    controls.appendChild(restartBtn);
+  }
+
+  if (phase === 'gameover') {
+    const restartBtn = document.createElement('button');
+    restartBtn.textContent = 'Restart';
     restartBtn.addEventListener('click', onRestart);
     controls.appendChild(restartBtn);
   }

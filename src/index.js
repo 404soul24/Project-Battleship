@@ -9,31 +9,37 @@ import {
 } from './dom.js';
 
 const SHIP_SIZES = [5, 4, 3, 3, 2];
+const SHIP_NAMES = { 5: 'Carrier', 4: 'Battleship', 3: 'Cruiser', 2: 'Destroyer' };
 let humanPlayer, computerPlayer;
 let phase = 'placement';
-let currentShipIndex = 0;
+let selectedShipSize = null;
 let orientation = 'horizontal';
 
 function initGame() {
   humanPlayer = new Player('Player');
   computerPlayer = new Player('Computer');
   phase = 'placement';
-  currentShipIndex = 0;
+  selectedShipSize = null;
   orientation = 'horizontal';
   setCellClickHandler(handlePlacementClick);
   render();
-  updateStatus('Place your ships — click a cell to position each one.');
+  updateStatus('Select a ship below, then click a cell to place it.');
 }
 
 function render() {
   renderGameBoards(humanPlayer, computerPlayer, phase);
-  renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
+  renderControls(phase, SHIP_SIZES, orientation, selectShip, toggleOrientation, handleRestart, humanPlayer.board.ships);
+}
+
+function selectShip(size) {
+  selectedShipSize = size;
+  updateStatus(`Placing ${SHIP_NAMES[size]} (size ${size}) — click a cell on your board.`);
 }
 
 function handlePlacementClick(row, col) {
-  if (phase !== 'placement') return;
+  if (phase !== 'placement' || !selectedShipSize) return;
 
-  const ship = new Ship(SHIP_SIZES[currentShipIndex]);
+  const ship = new Ship(selectedShipSize);
   const placed = humanPlayer.board.placeShip(ship, row, col, orientation);
 
   if (!placed) {
@@ -41,18 +47,18 @@ function handlePlacementClick(row, col) {
     return;
   }
 
-  currentShipIndex++;
+  selectedShipSize = null;
 
-  if (currentShipIndex >= SHIP_SIZES.length) {
+  if (humanPlayer.board.ships.length >= 5) {
     phase = 'battle';
-    computerPlayer.board.placeShipsRandomly();
+    computerPlayer.placeShipsRandomly();
     setCellClickHandler(handleBattleClick);
+    render();
     updateStatus('All ships placed! Click enemy waters to attack.');
   } else {
-    updateStatus(`Place ship of size ${SHIP_SIZES[currentShipIndex]}.`);
+    render();
+    updateStatus('Select another ship below, then click a cell.');
   }
-
-  render();
 }
 
 function handleBattleClick(row, col) {
@@ -65,7 +71,6 @@ function handleBattleClick(row, col) {
     phase = 'gameover';
     render();
     updateStatus('Victory! You sank the entire enemy fleet!');
-    renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
     return;
   }
 
@@ -79,7 +84,6 @@ function handleBattleClick(row, col) {
       phase = 'gameover';
       render();
       updateStatus('Defeat! The computer sank your fleet.');
-      renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
       return;
     }
 
@@ -90,26 +94,18 @@ function handleBattleClick(row, col) {
 
 function toggleOrientation() {
   orientation = orientation === 'horizontal' ? 'vertical' : 'horizontal';
-  renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
+  render();
 }
 
 function handleRestart() {
   if (phase === 'placement') {
-    for (const ship of humanPlayer.board.ships) {
-      for (let r = 0; r < 10; r++) {
-        for (let c = 0; c < 10; c++) {
-          if (humanPlayer.board.grid[r][c] === ship) {
-            humanPlayer.board.grid[r][c] = null;
-          }
-        }
-      }
-    }
-    humanPlayer.board.ships = [];
-    currentShipIndex = 0;
-    phase = 'placement';
-    setCellClickHandler(handlePlacementClick);
-    updateStatus('Place your ships — click a cell to position each one.');
+    initGame();
+    humanPlayer.placeShipsRandomly();
+    computerPlayer.placeShipsRandomly();
+    phase = 'battle';
+    setCellClickHandler(handleBattleClick);
     render();
+    updateStatus('Ships auto-placed! Click enemy waters to attack.');
   } else {
     initGame();
   }
