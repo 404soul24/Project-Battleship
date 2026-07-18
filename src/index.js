@@ -98,6 +98,7 @@ function handleBattleClick(row, col) {
       }
 
       if (humanPlayer.board.allShipsSunk()) {
+        console.log('[battle] HUMAN ALL SHIPS SUNK — gameover');
         phase = 'gameover';
         render();
         updateStatus('Defeat! The computer sank your fleet.');

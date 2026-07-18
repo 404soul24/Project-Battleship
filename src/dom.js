@@ -32,6 +32,7 @@ function buildGrid(label, player, phase, isEnemy) {
   const gridDiv = document.createElement('div');
   gridDiv.className = 'grid';
 
+  let clickableCount = 0;
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 10; c++) {
       const cell = document.createElement('button');
@@ -55,6 +56,7 @@ function buildGrid(label, player, phase, isEnemy) {
 
       const canClick = (phase === 'placement' && !isEnemy && !attacked) || (phase === 'battle' && isEnemy && !attacked);
       if (!canClick) cell.disabled = true;
+      else clickableCount++;
 
       if (canClick) {
         cell.addEventListener('click', () => {
@@ -65,6 +67,7 @@ function buildGrid(label, player, phase, isEnemy) {
       gridDiv.appendChild(cell);
     }
   }
+  console.log(`[grid] ${label} phase=${phase} clickable=${clickableCount}/100 handler=${cellClickHandler ? cellClickHandler.name : 'null'}`);
 
   container.appendChild(gridDiv);
   return container;
