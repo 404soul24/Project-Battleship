@@ -53,7 +53,7 @@ function buildGrid(label, player, phase, isEnemy) {
         cell.classList.add('ship');
       }
 
-      const canClick = isEnemy && !attacked && phase === 'battle';
+      const canClick = (phase === 'placement' && !isEnemy && !attacked) || (phase === 'battle' && isEnemy && !attacked);
       if (!canClick) cell.disabled = true;
 
       if (canClick) {
