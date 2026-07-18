@@ -14,6 +14,7 @@ let humanPlayer, computerPlayer;
 let phase = 'placement';
 let selectedShipSize = null;
 let orientation = 'horizontal';
+let isProcessing = false;
 
 function initGame() {
   humanPlayer = new Player('Player');
@@ -62,34 +63,41 @@ function handlePlacementClick(row, col) {
 }
 
 function handleBattleClick(row, col) {
-  if (phase !== 'battle') return;
+  if (phase !== 'battle' || isProcessing) return;
 
   const result = computerPlayer.board.receiveAttack(row, col);
   if (result === 'duplicate') return;
 
+  isProcessing = true;
+  render();
+  updateStatus(result === 'hit' ? 'Hit!' : 'Miss!');
+
   if (computerPlayer.board.allShipsSunk()) {
     phase = 'gameover';
+    isProcessing = false;
     render();
     updateStatus('Victory! You sank the entire enemy fleet!');
     return;
   }
 
-  updateStatus('Computer is thinking...');
-
   setTimeout(() => {
     const [cr, cc] = computerPlayer.getCoordinates();
-    humanPlayer.board.receiveAttack(cr, cc);
+    const compResult = humanPlayer.board.receiveAttack(cr, cc);
+
+    render();
+    updateStatus(compResult === 'hit' ? 'Computer hit your ship!' : 'Computer missed.');
 
     if (humanPlayer.board.allShipsSunk()) {
       phase = 'gameover';
+      isProcessing = false;
       render();
       updateStatus('Defeat! The computer sank your fleet.');
       return;
     }
 
-    render();
+    isProcessing = false;
     updateStatus('Your turn — click enemy waters.');
-  }, 600);
+  }, 800);
 }
 
 function toggleOrientation() {
