@@ -38,6 +38,7 @@ function selectShip(size) {
 }
 
 function handlePlacementClick(row, col) {
+  console.log('[placement] click', { row, col, phase, selectedShipSize });
   if (phase !== 'placement' || !selectedShipSize) return;
 
   const ship = new Ship(selectedShipSize);
@@ -63,7 +64,11 @@ function handlePlacementClick(row, col) {
 }
 
 function handleBattleClick(row, col) {
-  if (phase !== 'battle' || isProcessing) return;
+  console.log('[battle] click', { row, col, phase, isProcessing });
+  if (phase !== 'battle' || isProcessing) {
+    console.log('[battle] BLOCKED —', phase !== 'battle' ? 'phase=' + phase : 'isProcessing=' + isProcessing);
+    return;
+  }
 
   const result = computerPlayer.board.receiveAttack(row, col);
   if (result === 'duplicate') return;
@@ -101,6 +106,7 @@ function handleBattleClick(row, col) {
 
       updateStatus('Your turn — click enemy waters.');
     } finally {
+      console.log('[battle] computer turn done, isProcessing → false');
       isProcessing = false;
     }
   }, 800);
