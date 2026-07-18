@@ -1,72 +1,118 @@
+import './styles.css';
 import { Player } from './components/Player.js';
 import { Ship } from './components/Ship.js';
+import {
+  renderGameBoards,
+  updateStatus,
+  renderControls,
+  setCellClickHandler,
+} from './dom.js';
 
-const humanPlayer = new Player("Player 1");
-const computerPlayer = new Player("Computer AI");
+const SHIP_SIZES = [5, 4, 3, 3, 2];
+let humanPlayer, computerPlayer;
+let phase = 'placement';
+let currentShipIndex = 0;
+let orientation = 'horizontal';
 
-humanPlayer.board.placeShip(new Ship(3), 2, 3, true);
-computerPlayer.board.placeShip(new Ship(3), 5, 1, false);
+function initGame() {
+  humanPlayer = new Player('Player');
+  computerPlayer = new Player('Computer');
+  phase = 'placement';
+  currentShipIndex = 0;
+  orientation = 'horizontal';
+  setCellClickHandler(handlePlacementClick);
+  render();
+  updateStatus('Place your ships — click a cell to position each one.');
+}
 
-const humanGridElement = document.getElementById('human-grid');
-const computerGridElement = document.getElementById('computer-grid');
+function render() {
+  renderGameBoards(humanPlayer, computerPlayer, phase);
+  renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
+}
 
-function handleTurn(targetRow, targetCol) {
-    computerPlayer.board.receiveAttack(targetRow, targetCol);
-    
-    if (computerPlayer.board.allShipsSunk()) {
-        alert("Victory! You destroyed the enemy fleet!");
-        renderGameBoards();
-        return;
-    }
+function handlePlacementClick(row, col) {
+  if (phase !== 'placement') return;
 
-    const [compRow, compCol] = computerPlayer.getCoordinates();
-    humanPlayer.board.receiveAttack(compRow, compCol);
+  const ship = new Ship(SHIP_SIZES[currentShipIndex]);
+  const placed = humanPlayer.board.placeShip(ship, row, col, orientation);
+
+  if (!placed) {
+    updateStatus('Cannot place there — try another cell.');
+    return;
+  }
+
+  currentShipIndex++;
+
+  if (currentShipIndex >= SHIP_SIZES.length) {
+    phase = 'battle';
+    computerPlayer.board.placeShipsRandomly();
+    setCellClickHandler(handleBattleClick);
+    updateStatus('All ships placed! Click enemy waters to attack.');
+  } else {
+    updateStatus(`Place ship of size ${SHIP_SIZES[currentShipIndex]}.`);
+  }
+
+  render();
+}
+
+function handleBattleClick(row, col) {
+  if (phase !== 'battle') return;
+
+  const result = computerPlayer.board.receiveAttack(row, col);
+  if (result === 'duplicate') return;
+
+  if (computerPlayer.board.allShipsSunk()) {
+    phase = 'gameover';
+    render();
+    updateStatus('Victory! You sank the entire enemy fleet!');
+    renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
+    return;
+  }
+
+  updateStatus('Computer is thinking...');
+
+  setTimeout(() => {
+    const [cr, cc] = computerPlayer.getCoordinates();
+    humanPlayer.board.receiveAttack(cr, cc);
 
     if (humanPlayer.board.allShipsSunk()) {
-        alert("Defeat! The computer destroyed your fleet.");
-        renderGameBoards();
-        return;
+      phase = 'gameover';
+      render();
+      updateStatus('Defeat! The computer sank your fleet.');
+      renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
+      return;
     }
 
-    renderGameBoards();
+    render();
+    updateStatus('Your turn — click enemy waters.');
+  }, 600);
 }
 
-function renderGameBoards() {
-    humanGridElement.innerHTML = '';
-    computerGridElement.innerHTML = '';
-
-    renderGrid(humanPlayer, humanGridElement, false);
-    
-    renderGrid(computerPlayer, computerGridElement, true);
+function toggleOrientation() {
+  orientation = orientation === 'horizontal' ? 'vertical' : 'horizontal';
+  renderControls(phase, SHIP_SIZES, currentShipIndex, orientation, toggleOrientation, handleRestart);
 }
 
-function renderGrid(player, containerElement, isEnemyGrid) {
-    player.board.grid.forEach((row, rowIndex) => {
-        row.forEach((cell, colIndex) => {
-            const cellButton = document.createElement('button');
-            cellButton.classList.add('cell'); 
-
-            const isMiss = player.board.missedAttack.some(([r, c]) => r === rowIndex && c === colIndex);
-            const isHit = cell !== null && !isMiss && player.board.grid[rowIndex][colIndex] === cell; 
-
-            if (isMiss) {
-                cellButton.classList.add('miss');
-            } else if (cell !== null && isEnemyGrid === false) {
-                cellButton.classList.add('ship');
-            }
-
-            if (isEnemyGrid && !isMiss) {
-                cellButton.addEventListener('click', () => {
-                    handleTurn(rowIndex, colIndex);
-                });
-            } else if (isEnemyGrid) {
-                cellButton.disabled = true;
-            }
-
-            containerElement.appendChild(cellButton);
-        });
-    });
+function handleRestart() {
+  if (phase === 'placement') {
+    for (const ship of humanPlayer.board.ships) {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 10; c++) {
+          if (humanPlayer.board.grid[r][c] === ship) {
+            humanPlayer.board.grid[r][c] = null;
+          }
+        }
+      }
+    }
+    humanPlayer.board.ships = [];
+    currentShipIndex = 0;
+    phase = 'placement';
+    setCellClickHandler(handlePlacementClick);
+    updateStatus('Place your ships — click a cell to position each one.');
+    render();
+  } else {
+    initGame();
+  }
 }
 
-// Kickstart the game on page load
-renderGameBoards();
+initGame();
