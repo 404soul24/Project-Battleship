@@ -128,16 +128,26 @@ export function renderControls(phase, ships, orientation, onSelectShip, onToggle
   }
 
   if (phase === 'battle') {
+    const hint = document.createElement('span');
+    hint.textContent = 'Click enemy waters to attack  ';
+    hint.style.color = '#888';
+    controls.appendChild(hint);
     const restartBtn = document.createElement('button');
     restartBtn.textContent = 'Restart';
-    restartBtn.addEventListener('click', onRestart);
+    restartBtn.addEventListener('click', (e) => {
+      console.log('[control] Restart clicked during battle');
+      onRestart();
+    });
     controls.appendChild(restartBtn);
   }
 
   if (phase === 'gameover') {
     const restartBtn = document.createElement('button');
     restartBtn.textContent = 'Restart';
-    restartBtn.addEventListener('click', onRestart);
+    restartBtn.addEventListener('click', (e) => {
+      console.log('[control] Restart clicked during gameover');
+      onRestart();
+    });
     controls.appendChild(restartBtn);
   }
 }
