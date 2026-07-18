@@ -81,22 +81,28 @@ function handleBattleClick(row, col) {
   }
 
   setTimeout(() => {
-    const [cr, cc] = computerPlayer.getCoordinates();
-    const compResult = humanPlayer.board.receiveAttack(cr, cc);
+    try {
+      const [cr, cc] = computerPlayer.getCoordinates();
+      const compResult = humanPlayer.board.receiveAttack(cr, cc);
 
-    render();
-    updateStatus(compResult === 'hit' ? 'Computer hit your ship!' : 'Computer missed.');
-
-    if (humanPlayer.board.allShipsSunk()) {
-      phase = 'gameover';
-      isProcessing = false;
       render();
-      updateStatus('Defeat! The computer sank your fleet.');
-      return;
-    }
+      if (compResult === 'hit') {
+        updateStatus('Computer hit your ship!');
+      } else {
+        updateStatus('Computer missed.');
+      }
 
-    isProcessing = false;
-    updateStatus('Your turn — click enemy waters.');
+      if (humanPlayer.board.allShipsSunk()) {
+        phase = 'gameover';
+        render();
+        updateStatus('Defeat! The computer sank your fleet.');
+        return;
+      }
+
+      updateStatus('Your turn — click enemy waters.');
+    } finally {
+      isProcessing = false;
+    }
   }, 800);
 }
 

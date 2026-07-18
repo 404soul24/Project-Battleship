@@ -9,11 +9,13 @@ class Player {
   }
 
   getCoordinates() {
-    let row, col, moveKey;
+    let row, col, moveKey, attempts = 0;
     do {
       row = Math.floor(Math.random() * 10);
       col = Math.floor(Math.random() * 10);
       moveKey = `${row},${col}`;
+      attempts++;
+      if (attempts > 200) break;
     } while (this.pastMoves.includes(moveKey));
     this.pastMoves.push(moveKey);
     return [row, col];
